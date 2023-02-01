@@ -63,9 +63,9 @@ function displayForecast(response) {
   forecastElement.innerHTML = forecastHTML;
 }
 
-function getForecast(coordinate) {
+function getForecast(coordinate, unit) {
   let apiKey = "32b4b295foaa231fc57f93c96aat80ba";
-  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?lon=${coordinate.longitude}&lat=${coordinate.latitude}&key=${apiKey}&units=metric`;
+  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?lon=${coordinate.longitude}&lat=${coordinate.latitude}&key=${apiKey}&units=${unit}`;
   axios.get(apiUrl).then(displayForecast);
 }
 
@@ -78,13 +78,18 @@ function displayTemperature(response) {
   let dateElement = document.querySelector("#date");
   let iconElement = document.querySelector("#icon");
 
-  celsiusTemperature = response.data.temperature.current;
+  currentTemperature = response.data.temperature.current;
 
-  temperatureElement.innerHTML = Math.round(celsiusTemperature);
+  temperatureElement.innerHTML = Math.round(currentTemperature);
   cityElement.innerHTML = response.data.city;
   descriptionElement.innerHTML = response.data.condition.description;
   humidityElement.innerHTML = response.data.temperature.humidity;
-  windElement.innerHTML = Math.round(response.data.wind.speed);
+  let windSpeed = Math.round(response.data.wind.speed);
+  if (tempUnit === "imperial") {
+    windElement.innerHTML = windSpeed + "mph";
+  } else if (tempUnit === "metric") {
+    windElement.innerHTML = windSpeed + "km/h";
+  }
   dateElement.innerHTML = formatDate(response.data.time * 1000);
   iconElement.setAttribute(
     "src",
@@ -92,39 +97,41 @@ function displayTemperature(response) {
   );
   iconElement.setAttribute("alt", response.data.condition.description);
 
-  getForecast(response.data.coordinates);
+  getForecast(response.data.coordinates, tempUnit);
 }
 
-function search(city) {
+function search(city, unit) {
+  currentCity = city;
   let apiKey = "32b4b295foaa231fc57f93c96aat80ba";
-  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
+  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=${unit}`;
   axios.get(apiUrl).then(displayTemperature);
 }
 
 function handleSubmit(event) {
   event.preventDefault();
   let cityInputElement = document.querySelector("#city-input");
-  search(cityInputElement.value);
+  search(cityInputElement.value, tempUnit);
 }
 
 function displayFahrenheitTemperature(event) {
   event.preventDefault();
   celsiusLink.classList.remove("active");
   fahrenheitLink.classList.add("active");
-  let temperatureElement = document.querySelector("#temperature");
-  let fahrenheitTemperature = (celsiusTemperature * 9) / 5 + 32;
-  temperatureElement.innerHTML = Math.round(fahrenheitTemperature);
+  tempUnit = "imperial";
+  search(currentCity, tempUnit);
 }
 
 function displayCelsiusTemperature(event) {
   event.preventDefault();
   fahrenheitLink.classList.remove("active");
   celsiusLink.classList.add("active");
-  let temperatureElement = document.querySelector("#temperature");
-  temperatureElement.innerHTML = Math.round(celsiusTemperature);
+  tempUnit = "metric";
+  search(currentCity, tempUnit);
 }
 
-let celsiusTemperature = null;
+let currentTemperature = null;
+let tempUnit = "metric";
+let currentCity = "Tabriz";
 
 let form = document.querySelector("#search-form");
 form.addEventListener("submit", handleSubmit);
@@ -135,4 +142,4 @@ fahrenheitLink.addEventListener("click", displayFahrenheitTemperature);
 let celsiusLink = document.querySelector("#celsius-link");
 celsiusLink.addEventListener("click", displayCelsiusTemperature);
 
-search("Tabriz");
+search(currentCity, tempUnit);
